@@ -1,0 +1,14 @@
+date,book,chapter_slug,word_count,sources_count,verify_flag_count,pantry_notes_found,pantry_lib_files_used,thin_pantry,mechanism_explained,contested_claims_flagged
+2026-06-10,investing-in-quantum,01-the-honest-starting-point,2104,6,0,yes,1,no,"Three-layer test separates real physics from commercial-timeline question from price-vs-narrative question",0
+2026-06-10,investing-in-quantum,02-what-quantum-actually-is,2143,5,0,yes,1,no,"Six-term investor vocabulary as a filter; fidelity-compounding (physical vs logical error rate) is the key non-intuitive mechanism",1
+2026-06-10,investing-in-quantum,03-the-big-compute-small-data-filter,2005,5,0,yes,0,no,"I/O / state-preparation bottleneck: small spec in, exponential compute, small answer out",2
+2026-06-10,investing-in-quantum,04-why-the-quantum-llm-thesis-is-wrong,2041,3,1,yes,0,no,"Three structural objections (dequantization, dense matmul with classical I/O, barren-plateau trap) each kill the quantum-LLM thesis",0
+2026-06-10,investing-in-quantum,05-the-legitimate-killer-app-molecular-simulation,2071,3,1,yes,0,no,"Quantum computers natively represent strongly-correlated electronic structure where classical DFT/CCSD(T) systematically fail",1
+2026-06-10,investing-in-quantum,06-the-classical-counterattack-pattern,2024,3,1,yes,1,no,"Area-law entanglement on local lattices is exactly what classical tensor networks compress, so most beyond-classical claims get matched in 12-24 months",1
+2026-06-10,investing-in-quantum,07-the-architecture-horse-race,2137,6,1,yes,0,no,"Five architectures form a Pareto frontier across five fault-tolerance metrics with no current winner",0
+2026-06-10,investing-in-quantum,08-the-four-part-breakthrough-signal,2276,5,1,yes,1,no,"Four individually-forgeable signals must fire jointly because their conjunction cannot be gamed",1
+2026-06-10,investing-in-quantum,09-sovereign-demand-the-floor-that-matters,2113,5,3,yes,1,no,"Recurring multi-year procurement contracts are a durable demand floor; grants and MOUs are noise",0
+2026-06-10,investing-in-quantum,10-nvidias-position-the-sophisticated-hedge,2034,3,1,yes,0,no,"CFIUS/NSIA bar a material NVIDIA acquisition, so NVIDIA owns the orchestration layer and complements rather than substitutes for pure-plays",0
+2026-06-10,investing-in-quantum,11-the-bookmark-position-deliberate-small-exposure,2103,3,4,yes,2,no,"A fine-if-it-goes-to-zero stake converts passive watching into active attention without injecting motivated reasoning",0
+2026-06-10,investing-in-quantum,12-the-2030-investment-horizon,2088,5,0,yes,2,no,"Gate each of four phases on observed breakthrough signals rather than vendor roadmap dates; pessimistic (Kalai/Dyakonov) scenario presented fairly",1
+2026-06-10,investing-in-quantum,13-what-to-read-who-to-trust,2157,5,1,yes,1,no,"Sort sources by incentive into four credibility tiers and run a two-lookup rule (Aaronson/Preskill comment; Flatiron classical response) before acting",1
