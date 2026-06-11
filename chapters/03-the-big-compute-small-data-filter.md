@@ -1,77 +1,133 @@
 # Chapter 3 — The Big Compute, Small Data Filter
 
-## Decision question
+*Why the shape of a problem matters more than its importance.*
 
-A quantum company has just told you its technology will "revolutionize" something — drug discovery, logistics, finance, artificial intelligence, your particular industry. Before you open the financials, before you weigh the management team, you want a fast, physics-grounded screen for one question: **How do I tell whether a quantum company's target application is real or invented?**
+Here is a thought experiment I want you to sit with for a moment before we talk about quantum computers at all.
 
-## The short answer
+Imagine a genius locked in a soundproof room. She can solve any puzzle you can whisper through the keyhole in the door. Whatever she works out, she whispers back — a single word, a number, a short answer. For problems of that shape, she is unbeatable. She works faster than any team you could assemble outside the room, by a margin so large it is almost meaningless to compare.
 
-Apply the big compute, small data filter — three questions you can run without a physics degree. A problem is a *candidate* for genuine quantum advantage only if (1) it can be specified compactly, by a handful of parameters rather than a large dataset; (2) solving it requires exploring an exponentially large computational space; and (3) the useful answer is small — a number, a decision, a short result. Problems that pass all three (molecular simulation, integer factoring) might be real quantum applications. Problems that require loading or returning large amounts of data (LLM training, database search, supply-chain optimization, financial time-series) almost certainly are not, and they fail *structurally* — not because the hardware is immature, but because of a limit no future hardware removes.
+Now suppose the puzzle requires you to first shove an encyclopedia through the keyhole. Then, once she has solved it, you need to extract a full library of answers back through it. What happens? The genius is the same genius. She is thinking just as brilliantly in there. But you are no longer waiting on her thinking. You are waiting on the keyhole. And the keyhole does not care how smart she is.
 
-## Why this matters
+The genius is a quantum processor. The keyhole is the classical-quantum interface — the bottleneck for getting data in and answers out. The puzzles she is wasted on are the data-heavy ones. Every failure case I am going to show you in this chapter is, at bottom, a story about the keyhole.
 
-The instinct every investor brings from the AI era is "big data means big opportunity." Quantum computing inverts that instinct, and getting the inversion wrong is how you buy the wrong thesis at any price.
+---
 
-Here is the trap. A quantum company names a large, expensive, important problem — optimizing a global supply chain, say, or pricing a derivatives book — and the importance of the problem is presented as evidence that quantum will solve it. But importance and classical difficulty are *irrelevant* to whether a problem is a quantum problem. What matters is the *shape* of the problem, and most large, data-heavy problems have exactly the wrong shape. An investor who cannot run this filter will fund application theses that were never physically plausible, no matter how good the qubits get. The hardware quality is a separate question; if the application fails the filter, excellent hardware does not save it.
+The reason this matters for investors is that the instinct everyone brings from the AI era is precisely backwards for quantum. In AI, big data meant big opportunity. More data meant better models, and the companies that could accumulate and process the most data held the structural advantage. Quantum computing inverts that instinct completely.
 
-The filter is also the practical face of a deep result. As Chapter 2 noted, only a structured minority of problems sit in the believed gap where quantum computers help. This chapter gives you a field-usable proxy for "does this problem have that structure — *and* is it free of the data-movement penalties that erase the gain?"
+A quantum company will name a large, expensive, important problem — optimizing a global supply chain, or training the next generation of language models, or pricing a derivatives book. The importance of the problem is presented as evidence that quantum will solve it. But importance and classical difficulty are irrelevant to whether a problem is a *quantum* problem. What matters is the shape of the problem — specifically, whether it has a small mouth, a huge stomach, and a small exit. Most large, data-heavy problems have exactly the wrong shape, and this is a structural fact that no improvement in qubit quality, coherence time, or error correction will ever fix.
 
-A note on provenance: the three-question form is **this handbook's own synthesis**. A single citable source stating the filter in exactly these three questions does not exist; the construction is built on Scott Aaronson's I/O critique and the BQP/BPP structure argument, and is supported by — not lifted from — the literature cited below. Present it, and use it, as the author's framework.
+The filter I want to give you is three questions you can run on any quantum application claim before you open the financials. I will explain why each question matters, show you what passing and failing look like, and teach you where to look in a vendor's own materials for the assumption that makes the speedup disappear.
 
-## The framework
+---
 
-The pattern quantum computers genuinely accelerate has a memorable shape: **a small mouth and a huge stomach.** A small specification goes in, an exponentially large amount of computation happens inside, and a small answer comes out. Three questions test for it.
+## The Filter
 
-**Question 1 — Can the problem instance be described compactly?** A few parameters, not a large dataset. *This is the input half of the I/O bottleneck.* A quantum computer's exponential edge is in *manipulating* a quantum state, not in *building* one from classical data. To act on classical data you must first encode it into a quantum state — a step called *state preparation*. And here is Aaronson's "fine print": a basic information-theoretic bound says that preparing an arbitrary state with *N* entries takes on the order of *N* operations. So if your problem requires loading a large dataset, the exponential speedup is gone *in the very first step* — you spend it all on loading ([Aaronson, "Read the Fine Print"](https://www.scottaaronson.com/papers/qml.pdf)). Proposed escape hatches exist — *QRAM*, a hypothetical quantum memory that serves data in superposition in logarithmic time — but building large, fault-tolerant QRAM is itself an unsolved and costly problem. The advertised speedups are *conditional* on that access model, and the condition is rarely met for real classical data [contested — see pantry flag: whether QRAM is ever buildable at fault-tolerant scale is open].
+**Question 1: Can the problem instance be described compactly?**
 
-**Question 2 — Does solving it require exploring an exponentially large space?** This is the *big compute* in the middle — the only place a quantum computer earns its keep. The hardness must be *intrinsic computational or simulation hardness* (an exponentially large space of possibilities or quantum states to explore), not data-movement hardness dressed up to look like computation. Factoring a large number, or simulating the electrons in a molecule, has this kind of intrinsic hardness. Sorting a list, serving a web page, or shuffling a big dataset does not.
+Not solved compactly. Described compactly. The *input* to the computation. A few parameters, not a large dataset.
 
-**Question 3 — Is the useful output small?** *This is the readout half of the I/O bottleneck.* Even a perfect quantum computation leaves you holding a quantum *state*, and the only way to learn its contents is to *measure* — which yields a few classical bits per run and collapses the state. To read out an *N*-dimensional answer you generally need on the order of *N* measurements and repetitions, which destroys any exponential speedup if the *answer* is large. A single number (a molecule's ground-state energy), a yes/no, a short list of prime factors — fine. A reconstructed image, a full probability distribution, a set of trained model weights — not fine; the readout cost swamps the gain ([Aaronson, lecture notes](https://www.scottaaronson.com/qisii.pdf)).
+Here is why this matters. A quantum computer's exponential edge lives in its ability to *manipulate* a quantum state — to propagate interference across a superposition of exponentially many possibilities simultaneously. What it cannot do, without paying a full price, is *build* that quantum state from classical data in the first place.
 
-A problem passes only if it clears all three: small in, big compute, small out. Fail any one — usually by being data-heavy on either end — and the application thesis is structurally weak regardless of the hardware.
+That step is called state preparation, and it has a basic information-theoretic floor: preparing an arbitrary quantum state with *N* entries takes on the order of *N* operations [verify]. So if your problem requires loading a large dataset, the exponential speedup is gone in the very first step. You spent it on loading. The quantum computation that follows may be brilliant, but it is working on a state you just took *N* steps to construct, and *N* steps is exactly what a classical computer charges for the same information. The quantum computer has not yet done anything that distinguishes it.
 
-A useful mental image holds the whole filter together: picture a genius locked in a soundproof room. She can solve any puzzle you can whisper through the keyhole, and whose answer is a single word she can whisper back. For problems of that shape she is unbeatable. But if solving the puzzle requires you to shove an entire encyclopedia through the keyhole first, and then to extract a full library of answers back through it, the keyhole — not the genius — becomes the bottleneck, and you would have been faster doing the work yourself outside the room. The genius is the quantum processor; the keyhole is the I/O channel; the puzzles she is wasted on are the data-heavy ones. The speedup, when it exists, is in the *thinking* — never in the *reading and writing*. Every failure case below is really a story about the keyhole.
+Scott Aaronson, who is both one of the field's leading theorists and its most reliable reality-checker, made this point in a Nature Physics piece titled "Read the Fine Print." His formulation is worth sitting with: any problem "limited by accessing classical data" will be solved faster by classical computers. The quantum part of the speedup assumes the data is already there, in quantum form, waiting to be processed. For real classical datasets — price histories, logistics tables, training corpora — that assumption is not met.
 
-## What it looks like in practice
+A proposed escape hatch exists. It is called *QRAM*, a hypothetical quantum memory that could serve data in superposition in logarithmic time rather than linear time. If QRAM existed at fault-tolerant scale, it would reopen the door for some data-heavy applications. But building large, fault-tolerant QRAM is itself an unsolved and costly engineering problem — the speedups that assume it are conditional on a condition that is not yet achievable, and may never be achievable at the scale the applications require [contested — the question of whether fault-tolerant QRAM is buildable in principle or just infeasible in practice is genuinely open in the literature].
 
-Set four passing applications beside four failing ones, and name the question that kills each failure.
+<!-- → [DIAGRAM: Two-column visual contrasting a compact input (a molecular formula, a large integer) on the left with a large input (a dataset of price ticks, a training corpus) on the right. The compact input passes through a narrow "state preparation" gate cheaply; the large input clogs it. Caption: "The state preparation bottleneck. The quantum speedup lives inside the processor, not in the loading step — but the loading step charges N operations for N data points, erasing the advantage before computation begins."] -->
 
-**Passes:**
+**Question 2: Does solving it require exploring an exponentially large space?**
 
-- **Integer factoring (Shor's algorithm).** The input — the number to factor — is a few thousand bits (tiny). The search space — its possible factors — is astronomical (big compute). The output — two primes — is tiny. A textbook pass on *structure*. The honesty caveat: cryptographically relevant factoring needs *millions* of high-quality physical qubits and deep fault tolerance, so this is a pass on shape, *not* a near-term capability. Do not infer that RSA is about to break.
-- **Molecular / quantum-chemistry simulation.** The electrons in a molecule occupy a state space that grows exponentially with electron count — precisely the regime classical computers struggle with and the one Richard Feynman proposed quantum computers for in 1981. The input (a molecular description) is compact; the useful output (a ground-state energy, a binding affinity) is a single number. The engine, *quantum phase estimation* (QPE), extracts that energy at a cost that grows only polynomially in system size. Recent work has combined QPE with *logical* qubits to compute molecular energies — a real milestone toward chemistry advantage ([Phys. Rev. X, 2026](https://journals.aps.org/prx/abstract/10.1103/pb2g-j9cw); [arXiv:2312.16375](https://arxiv.org/pdf/2312.16375)). This is the application most independent forecasters expect to mature first.
+This is the only place a quantum computer earns its keep — the *big compute* in the middle. The hardness must be intrinsic computational or simulation hardness, meaning the problem genuinely requires traversing an exponentially large space of possibilities or quantum states. It cannot be data-movement hardness dressed up to look like computation.
 
-**Fails:**
+Sorting a large list is hard classically because there is a lot of data. That is data hardness. Factoring a thousand-digit number is hard classically because the space of candidate factors is astronomically large even though the input is small. That is computational hardness. Simulating the electrons in a complex molecule is hard classically because the quantum state of many interacting electrons occupies a Hilbert space that grows exponentially with the number of electrons — this is the problem Richard Feynman had in mind when he proposed quantum computers in 1981, and it remains the cleanest example of a problem with the right shape.
 
-- **LLM training.** Killed by Questions 1 *and* 3 at once: terabytes of input, billions of output parameters. Both I/O bottlenecks fire simultaneously, with no proposed route to load the corpus or read out the weights without paying full *N*-scale costs.
-- **Database / unstructured search.** Killed by Question 1. Aaronson's point is blunt: any problem "limited by accessing classical data... will be solved faster by classical computers." Grover's algorithm offers only a *quadratic* (√N) speedup, and reading out the found item still costs ~√N — useful in principle, never exponential, and beaten by classical I/O for real lookups.
-- **Supply-chain / logistics optimization.** Killed by Questions 1 and 3. Every route, SKU, and constraint is a large input; a full schedule is a large output; the hardness is combinatorial and data-bound, not Hilbert-space-bound. This is among the most over-claimed quantum applications.
-- **Financial time-series analysis.** Killed by Question 1. Large data inputs (every price tick), no proven exponential speedup, hardness that lives in the data rather than in an exponential state space.
+The distinction is subtle but decisive. Data hardness does not respond to quantum parallelism. Computational hardness — the kind that emerges from an exponentially large space of states or configurations to explore — is exactly what quantum interference and superposition are designed to exploit.
 
-A fair qualification, in the interest of not overstating the case: "quantum is useless for all optimization" goes too far. The honest claim is that there is *no proven exponential* advantage for data-heavy optimization, ML, or finance; modest *heuristic* (non-exponential) gains remain an open and contested question [contested — see pantry flag]. Keep the filter focused on *exponential* advantage, which is what the breathless claims promise and what justifies the valuations.
+**Question 3: Is the useful output small?**
 
-The real skill in applying this filter well is learning to find the *buried assumption* in a vendor's own materials. In a vendor white paper claiming an exponential speedup for a data-heavy task, locate the sentence — usually deep in the appendix — that quietly assumes the data is "already loaded" into a quantum state, or that an idealized QRAM exists. That assumption is Aaronson's fine print, and it is where the speedup secretly went.
+Even a perfect quantum computation leaves you holding a quantum state, and the only way to learn the contents of a quantum state is to measure it. Each measurement yields a few classical bits and collapses the state. To read out an *N*-dimensional answer you generally need on the order of *N* measurements and repetitions — which means if the *answer* is large, the readout cost swamps whatever was gained in the computation [verify].
 
-## What to watch for
+This is the exit side of the keyhole. A single number — a molecule's ground-state energy, a binding affinity, the two prime factors of a large integer — can exit the room without difficulty. A reconstructed image, a full probability distribution, a set of trained neural-network weights — these cannot, not without paying the full *N* cost that wipes out the exponential advantage.
 
-- **Application claims that name specific problem classes** — transition-metal catalysis, nitrogen fixation, battery-cathode simulation — rather than broad sectors ("quantum will transform pharma"). Specificity is a sign someone ran the filter internally.
-- **Computational-chemistry benchmarks against real classical baselines** (such as density functional theory) on *named* molecules, with the active-space size and accuracy target stated.
-- **Companies quietly pivoting away from "quantum AI" toward quantum chemistry or materials** — a sign they understand their own hardware's constraints.
+A problem passes the filter only if it clears all three: small in, big compute, small out. Fail any one, and the application thesis is structurally weak regardless of the hardware generation.
 
-## What to ignore
+---
 
-- **Any quantum application claim built on large datasets** — recommendation systems, "quantum big data," logistics optimization, financial analytics promising exponential speedups. These fail the filter structurally.
-- **"AI acceleration" claims.** The thesis that quantum will speed up LLM training or inference fails Questions 1 and 3 at once; it is not a timing problem but a structural one.
-- **Chemistry demonstrations on textbook molecules** — H₂, LiH, BeH₂. Classical methods handle these trivially; such demos are proof-of-concept, not proof-of-advantage.
+## What Passes
 
-## The decision rule
+**Integer factoring.** The input — a thousand-digit number — is a few kilobits. The space of candidate factors is astronomical. The output — two primes — is tiny. Shor's algorithm exploits a deep connection between the period of a modular function and the prime factorization of the input, running in polynomial time on a quantum computer versus sub-exponential time on the best classical algorithms. A textbook pass on all three questions.
 
-Before reading any quantum company's investor materials, run its headline application through the three questions — small specification in, exponentially large computation, small classical answer out. If it fails (almost always by being data-heavy on the input or output), the application thesis is structurally weak no matter how good the hardware, and you should weight the rest of the pitch accordingly.
+One honesty caveat: cracking cryptographically relevant RSA keys requires millions of high-quality *logical* qubits, which in turn require hundreds of millions to perhaps billions of physical qubits with today's error rates. This is a pass on shape, not a near-term capability. Do not infer that RSA encryption is about to break.
 
-## Further reading
+**Molecular and quantum-chemistry simulation.** The electrons in a molecule are quantum objects. Their joint state is a superposition across all possible configurations, and the size of that superposition — the Hilbert space — grows exponentially with electron count. Classical computers approximate this, and approximation breaks down badly for transition metals, strongly correlated systems, and large active spaces. A quantum computer can represent and evolve the actual quantum state directly, without approximation.
 
-- **Scott Aaronson, "Read the Fine Print" (Nature Physics, 2015; author copy at scottaaronson.com)** — [scottaaronson.com/papers/qml.pdf](https://www.scottaaronson.com/papers/qml.pdf). The foundational, accessible statement of the I/O / state-preparation critique that the whole filter rests on; written by the field's leading skeptic-insider.
-- **"Disentangling Hype from Practicality: On Realistically Achieving Quantum Advantage" (Communications of the ACM / arXiv:2307.00523, 2023)** — [arxiv.org/abs/2307.00523](https://arxiv.org/abs/2307.00523). An independent academic survey mapping which applications can realistically clear the advantage bar and which cannot — the filter's verdicts, argued in detail.
-- **Phys. Rev. X, "Fast Quantum Simulation of Electronic Structure" (2026)** — [journals.aps.org](https://journals.aps.org/prx/abstract/10.1103/pb2g-j9cw). A primary source for the strongest "pass" case: quantum phase estimation applied to real molecular energy calculations, with concrete resource numbers.
+The useful output is compact: a ground-state energy, a reaction rate, a binding affinity. The algorithm *quantum phase estimation* (QPE) extracts that energy at a cost that grows only polynomially with system size. Recent work has demonstrated QPE applied to actual molecular calculations on logical qubits — not just toy demonstrations, but computations with stated active-space sizes and accuracy targets competitive with classical benchmarks ([Phys. Rev. X, 2026](https://journals.aps.org/prx/abstract/10.1103/pb2g-j9cw); [arXiv:2312.16375](https://arxiv.org/pdf/2312.16375)). This is the application most independent forecasters expect to mature first, and the reason the most credible quantum companies have quietly narrowed their roadmaps to chemistry and materials.
+
+<!-- → [TABLE: Three-column table — Application, Filter verdict (Pass/Fail), Killing question (N/A or Q1/Q2/Q3). Rows: integer factoring (Pass), molecular simulation (Pass), LLM training (Fail — Q1 and Q3), unstructured database search (Fail — Q1, Grover speedup only quadratic), supply-chain optimization (Fail — Q1 and Q3), financial time-series analysis (Fail — Q1). Caption: "The filter applied to six common quantum application claims. 'Killing question' names the first of the three questions that eliminates the exponential advantage."] -->
+
+---
+
+## What Fails
+
+**LLM training.** Killed by Questions 1 and 3 simultaneously. The input is a training corpus: hundreds of billions of tokens, terabytes of text. The output is a set of model weights: billions of floating-point parameters. Both I/O bottlenecks fire at once. There is no proposed mechanism to load the corpus or read out the weights without paying full *N*-scale costs, and *N* is very large. This is not a timing problem. The hardware will not fix it. The thesis is structurally incoherent.
+
+**Unstructured database search.** Killed by Question 1. Aaronson's point applies directly: any problem limited by accessing classical data will be solved faster by classical computers. Grover's algorithm offers a quadratic speedup — searching *N* items in √*N* time rather than *N* — but this is not exponential, and reading out the found item still costs roughly √*N* quantum operations. For real lookups against real databases, classical I/O infrastructure is so optimized that a quadratic quantum advantage, even in principle, is unlikely to win. This is among the most frequently cited quantum applications and among the weakest.
+
+**Supply-chain and logistics optimization.** Killed by Questions 1 and 3. Every route, constraint, SKU count, and delivery window is input data. A complete operational schedule is large output. The hardness here is combinatorial and data-bound, not Hilbert-space-bound. There is no known exponential quantum speedup for general combinatorial optimization, and the data volume on both ends ensures the keyhole problem is severe. This is perhaps the most over-claimed category of quantum applications.
+
+**Financial time-series analysis.** Killed by Question 1. The inputs are large — every price tick, order flow record, and macro indicator a fund would want to condition on. No proven exponential speedup exists for the analysis of classical time series, and the hardness lives in the data, not in an exponential state space that quantum interference could exploit.
+
+A fair caveat before moving on: "quantum is useless for all optimization" goes too far. The honest claim is that there is *no proven exponential* advantage for data-heavy optimization, machine learning, or finance. Modest heuristic gains — improvements that are real but not exponential — remain an open and contested question for certain structured optimization problems [contested — see also the QAOA literature]. The filter is specifically calibrated to exponential advantage, which is what the breathless claims promise and what justifies the valuations attached to them.
+
+---
+
+## Finding the Hidden Assumption
+
+The real skill in applying this filter is learning to locate the buried assumption in a vendor's own materials. It is almost always there, and it is almost always in the appendix.
+
+Look for sentences that say the data is "assumed to already be encoded" in a quantum state, or that the analysis "assumes access to a QRAM oracle," or that the speedup holds "given efficient state preparation." These phrases are the fine print Aaronson warned about. They are not admissions of failure — they are technically accurate statements of the conditions under which the speedup holds. But those conditions are almost never met for the applications being pitched, and the gap between the condition and the real world is where the exponential advantage quietly lives and quietly dies.
+
+When you find that sentence, you have found the point where the genius's room got sealed. Everything before it in the pitch is real. Everything after it is conditional on a keyhole that does not exist yet.
+
+<!-- → [DIAGRAM: Annotated mock excerpt of a quantum white paper. Three sentences highlighted in sequence: (1) an introductory claim of exponential speedup; (2) a middle section describing the algorithm; (3) a footnote or appendix sentence that reads "assuming efficient QRAM access" or similar. Arrows pointing to the third sentence labeled "This is where the speedup lives." Caption: "How to read a quantum white paper. The speedup claim is usually real given the assumption. The assumption is usually unmet for real classical data."] -->
+
+---
+
+## What This Looks Like in Practice
+
+Before reading any quantum company's investor materials, run its headline application through the three questions. Can the problem instance be described by a handful of parameters, not a large dataset? Does solving it require traversing an exponentially large computational or state space? Is the useful answer small — a number, a decision, a short result?
+
+Most claimed applications fail Question 1. A few that pass Question 1 fail Question 3. The ones that pass all three — molecular simulation, certain cryptographic problems, specific combinatorial structures with compact input — are the ones worth taking seriously.
+
+What should catch your attention as genuinely promising: application claims that name specific problem classes rather than broad sectors. "Transition-metal catalysis" rather than "quantum will transform pharma." "Nitrogen fixation reaction pathway" rather than "quantum drug discovery." Specificity suggests someone ran the filter internally. Benchmarks against real classical baselines — density functional theory, coupled-cluster methods — on named molecules with stated active-space sizes and accuracy targets. Companies that have quietly narrowed their roadmaps from "quantum AI" toward quantum chemistry or materials simulation; that pivot is a signal they understand their own hardware's constraints.
+
+What deserves skepticism: any quantum application claim built on large datasets. Recommendation systems, quantum big data, logistics optimization promising exponential speedups, financial analytics that require ingesting tick data or market microstructure. Chemistry demonstrations on hydrogen or lithium hydride — H₂ and LiH are textbook molecules that classical methods handle trivially; such demonstrations are proof-of-concept, not proof-of-advantage.
+
+The filter is not a guarantee of correctness in either direction. It will not tell you whether a chemistry company will succeed commercially, whether its hardware roadmap is achievable, or whether a particular molecular simulation will yield a drug worth developing. What it will tell you is whether the application is, at minimum, the right *shape* — whether the genius's room was built for this puzzle. Everything else in quantum investing sits downstream of that question.
+
+---
+
+## What Would Change My Mind
+
+If fault-tolerant QRAM were demonstrated at meaningful scale, Question 1 would relax substantially. Applications that currently fail on input data loading — certain machine-learning problems with compact feature representations, structured database queries — might become genuine candidates. I do not expect this in the near term, and the engineering obstacles are severe, but the honest position is that QRAM is a live research question, not a closed one.
+
+A demonstrated exponential quantum speedup for a combinatorial optimization problem of practical size — not a theoretical construction but a real computation beating real classical hardware on a real instance — would require me to revisit the strong version of my claim about logistics and finance. The current state of evidence does not support such a speedup, but the absence of a proof of impossibility means the door is not completely closed.
+
+## Still Puzzling
+
+The boundary between "data hardness" and "computational hardness" is cleaner in textbooks than in practice. Many real problems are mixtures: they have large data inputs but also contain an exponentially hard subproblem that quantum might accelerate. Whether a quantum computer could be used as a specialized subroutine — handling only the computationally hard inner loop, with classical pre- and post-processing on either side — is an active area of research, and the right answer is genuinely not yet known. The filter as stated is conservative: it treats any large I/O as fatal. A more nuanced version would ask how large the computationally hard kernel is relative to the I/O overhead, and what hybrid classical-quantum architectures might make the tradeoff favorable.
+
+---
+
+## Further Reading
+
+- **Scott Aaronson, "Read the Fine Print" (Nature Physics, 2015; author copy at scottaaronson.com)** — [scottaaronson.com/papers/qml.pdf](https://www.scottaaronson.com/papers/qml.pdf). The foundational statement of the I/O and state-preparation critique; the direct source for the filter's first and third questions.
+- **"Disentangling Hype from Practicality: On Realistically Achieving Quantum Advantage" (Communications of the ACM / arXiv:2307.00523, 2023)** — [arxiv.org/abs/2307.00523](https://arxiv.org/abs/2307.00523). An independent academic survey mapping which applications can realistically clear the advantage bar; the filter's verdicts argued in systematic detail.
+- **Phys. Rev. X, "Fast Quantum Simulation of Electronic Structure" (2026)** — [journals.aps.org](https://journals.aps.org/prx/abstract/10.1103/pb2g-j9cw). Primary source for the strongest passing case: quantum phase estimation applied to real molecular energy calculations on logical qubits, with concrete resource numbers.
+
+---
 
 *This handbook is a framework document, not financial advice. Company names are illustrative examples, not recommendations, and may age quickly.*
+
+<!-- → [INFOGRAPHIC: One-page summary visual of the full filter. Top: the "genius in a soundproof room" metaphor rendered as a simple illustration — a door with a keyhole, text flowing in (small) and out (small), with a large "thinking space" bubble inside. Middle: the three questions as a decision flowchart — Q1 (compact input?) → Q2 (exponential computation?) → Q3 (small output?) → PASS or FAIL at each branch. Bottom: two columns listing the four passing examples and four failing examples from the chapter, with the killing question labeled on each failure. Caption: "The big compute, small data filter: a one-page reference for evaluating quantum application claims."] -->
