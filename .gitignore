@@ -4,3 +4,5 @@ output/
 *.docx
 .DS_Store
 node_modules/
+# Reference pantries are local-only; never publish them.
+**/[Pp][Aa][Nn][Tt][Rr][Yy]/
